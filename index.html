@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mellow - Soft UI Breathing Pacer</title>
+    <style>
+        /* --- NEUMORPHISM DESIGN SYSTEM --- */
+        :root {
+            --bg-color: #e0e5ec;
+            --text-primary: #4a5568;
+            --text-secondary: #718096;
+            --shadow-dark: rgba(163, 177, 198, 0.7);
+            --shadow-light: rgba(255, 255, 255, 0.8);
+            
+            /* Extruded (Popping out) */
+            --shadow-convex: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light);
+            /* Inset (Pushed in) */
+            --shadow-concave: inset 9px 9px 16px var(--shadow-dark), inset -9px -9px 16px var(--shadow-light);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- MAIN CONTAINER --- */
+        .app-container {
+            background: var(--bg-color);
+            border-radius: 30px;
+            padding: 50px;
+            box-shadow: var(--shadow-convex);
+            text-align: center;
+            width: 380px;
+            max-width: 90vw;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+        }
+
+        /* --- BREATHING ORB --- */
+        .orb-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .orb {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--bg-color);
+            box-shadow: var(--shadow-convex);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 4s ease-in-out; /* 4s matches the breathing cycle */
+            position: relative;
+        }
+
+        .orb.inhale {
+            transform: scale(1.4);
+            box-shadow: 12px 12px 20px var(--shadow-dark), -12px -12px 20px var(--shadow-light);
+        }
+
+        .orb.exhale {
+            transform: scale(0.8);
+            box-shadow: 6px 6px 10px var(--shadow-dark), -6px -6px 10px var(--shadow-light);
+        }
+
+        .orb-text {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .orb-text.visible {
+            opacity: 1;
+        }
+
+        /* --- TACTILE BUTTON --- */
+        .btn-control {
+            background: var(--bg-color);
+            border: none;
+            border-radius: 50px;
+            padding: 16px 48px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            cursor: pointer;
+            box-shadow: var(--shadow-convex);
+            transition: all 0.2s ease;
+            outline: none;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-control:hover {
+            color: #2d3748;
+        }
+
+        /* The "Pressed" Neumorphic State */
+        .btn-control:active, .btn-control.active {
+            box-shadow: var(--shadow-concave);
+            transform: scale(0.98);
+        }
+
+        /* --- TIMER DISPLAY --- */
+        .timer-display {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <h1>Mellow</h1>
+        <p class="subtitle">Center your mind. Soft UI Breathing.</p>
+
+        <div class="orb-container">
+            <div class="orb" id="orb">
+                <span class="orb-text" id="orbText">Ready</span>
+            </div>
+        </div>
+
+        <button class="btn-control" id="startBtn">Start Breathing</button>
+           
+        <div class="timer-display" id="timerDisplay"></div>
+    </div>
+
+    <script>
+        // --- STATE MANAGEMENT ---
+        const orb = document.getElementById('orb');
+        const orbText = document.getElementById('orbText');
+        const startBtn = document.getElementById('startBtn');
+        const timerDisplay = document.getElementById('timerDisplay');
+
+        let isRunning = false;
+        let currentTimeout = null;
+        let countdownInterval = null;
+
+        const CYCLE_DURATION = 4000; // 4 seconds per phase
+
+        function updateText(text) {
+            orbText.classList.remove('visible');
+            setTimeout(() => {
+                orbText.textContent = text;
+                orbText.classList.add('visible');
+            }, 200);
+        }
+
+        function startCountdown(seconds, label) {
+            let timeLeft = seconds;
+            timerDisplay.textContent = `${label}: ${timeLeft}s`;
+            
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft >= 0) {
+                    timerDisplay.textContent = `${label}: ${timeLeft}s`;
+                } else {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+        }
+
+        function breatheCycle() {
+            if (!isRunning) return;
+
+            // 1. Inhale
+            orb.className = 'orb inhale';
+            updateText('Inhale');
+            startCountdown(4, 'Inhale');
+            
+            currentTimeout = setTimeout(() => {
+                if (!isRunning) return;
+                // 2. Hold
+                // Orb stays in inhale state (scaled up)
+                updateText('Hold');
+                startCountdown(4, 'Hold');
+                
+                currentTimeout = setTimeout(() => {
+                    if (!isRunning) return;
+                    // 3. Exhale
+                    orb.className = 'orb exhale';
+                    updateText('Exhale');
+                    startCountdown(4, 'Exhale');
+                    
+                    currentTimeout = setTimeout(() => {
+                        breatheCycle(); // Loop
+                    }, CYCLE_DURATION);
+                }, CYCLE_DURATION);
+            }, CYCLE_DURATION);
+        }
+
+        function toggleBreathing() {
+            isRunning = !isRunning;
+            
+            if (isRunning) {
+                startBtn.textContent = 'Stop';
+                startBtn.classList.add('active');
+                breatheCycle();
+            } else {
+                startBtn.textContent = 'Start Breathing';
+                startBtn.classList.remove('active');
+                clearTimeout(currentTimeout);
+                clearInterval(countdownInterval);
+                
+                orb.className = 'orb';
+                updateText('Ready');
+                timerDisplay.textContent = '';
+            }
+        }
+
+        startBtn.addEventListener('click', toggleBreathing);
+        
+        // Initialize text
+        setTimeout(() => orbText.classList.add('visible'), 500);
+    </script>
+</body>
+</html>
