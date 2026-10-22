@@ -31,6 +31,6 @@ This project was built for the **Devpost "Build With AI: Basics"** hackathon.
 
 ## 🚀 How to Run
 No build steps required! 
-1. Clone the repo: `git clone https://github.com/YOUR_USERNAME/mellow-breathing-app.git`
+1. Clone the repo: `git clone https://github.com/hamzatariq150/mellow-breathing-app.git`
 2. Open `index.html` in any modern web browser.
 3. Take a deep breath. 🌬️
